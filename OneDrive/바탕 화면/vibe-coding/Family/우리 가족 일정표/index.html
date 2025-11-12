@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>이언이네 일정표</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <header class="app-header">
+    <div class="title-block">
+      <h1>이언이네 일정표</h1>
+    </div>
+    <div class="share-controls">
+      <button id="share-link-btn" type="button" class="secondary">공유 링크 복사</button>
+      <button id="export-json-btn" type="button" class="secondary">일정 내보내기</button>
+      <input id="import-json-input" type="file" accept="application/json" hidden />
+      <button id="import-json-btn" type="button" class="secondary">일정 가져오기</button>
+    </div>
+  </header>
+
+  <main>
+    <section class="calendar-controls">
+      <button id="prev-month" type="button" aria-label="이전 달">◀</button>
+      <div class="current-info">
+        <h2 id="current-month-label"></h2>
+      </div>
+      <button id="next-month" type="button" aria-label="다음 달">▶</button>
+    </section>
+
+    <section class="calendar" aria-label="가족 달력">
+      <div class="weekday-row" id="weekday-row"></div>
+      <div class="date-grid" id="date-grid"></div>
+    </section>
+  </main>
+
+  <div class="modal" id="event-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title" hidden>
+    <div class="modal-content">
+      <header class="modal-header">
+        <h3 id="modal-title">일정 추가</h3>
+        <button type="button" class="icon-button" id="modal-close" aria-label="창 닫기">×</button>
+      </header>
+      <div class="modal-body">
+        <div class="modal-date" id="modal-date-label"></div>
+        <section class="event-list" id="event-list" aria-live="polite"></section>
+        <form id="event-form">
+          <label class="form-field">
+            <span>구분</span>
+            <select id="event-category" required>
+              <option value="" disabled selected>선택해 주세요</option>
+              <option value="yunhee">윤희</option>
+              <option value="eon">이언</option>
+              <option value="taeeun">태은</option>
+              <option value="ando">안도</option>
+              <option value="family">가족</option>
+              <option value="etc">기타</option>
+            </select>
+          </label>
+          <label class="form-field">
+            <span>일정 제목</span>
+            <input id="event-title" type="text" required placeholder="예: 축구 연습" />
+          </label>
+          <label class="form-field">
+            <span>메모</span>
+            <textarea id="event-notes" rows="3" placeholder="필요하다면 메모를 남겨주세요"></textarea>
+          </label>
+          <div class="form-field">
+            <label for="event-image">이미지</label>
+            <input id="event-image" type="file" accept="image/*" />
+            <p class="form-hint" id="event-image-status">이미지가 첨부되지 않았습니다.</p>
+            <label class="image-remove">
+              <input id="event-image-remove" type="checkbox" disabled />
+              <span>기존 이미지 삭제</span>
+            </label>
+          </div>
+          <div class="form-actions">
+            <button type="submit" class="primary">저장</button>
+            <button type="button" id="delete-all-btn" class="danger secondary">전체 삭제</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <template id="event-item-template">
+    <article class="event-item">
+      <div class="event-marker"></div>
+      <div class="event-content">
+        <h4 class="event-title"></h4>
+        <img class="event-image" alt="" hidden />
+        <p class="event-notes"></p>
+        <div class="event-meta">
+          <span class="event-category-label"></span>
+          <div class="event-actions">
+            <button type="button" class="icon-button edit-btn" title="수정" aria-label="일정 수정">✏</button>
+            <button type="button" class="icon-button delete-btn" title="삭제" aria-label="일정 삭제">🗑</button>
+          </div>
+        </div>
+      </div>
+    </article>
+  </template>
+
+  <script src="script.js" type="module"></script>
+</body>
+</html>
