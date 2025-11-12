@@ -450,6 +450,96 @@ button.edit-btn:hover {
   color: var(--primary);
 }
 
+.attendance-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+  padding: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 0.9rem;
+  background: rgba(33, 110, 148, 0.08);
+}
+
+.attendance-card[hidden] {
+  display: none;
+}
+
+.attendance-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.attendance-header h4 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--primary);
+}
+
+.attendance-subtitle {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.attendance-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: rgba(33, 82, 111, 0.4);
+  color: #fff;
+  border-radius: 0.7rem;
+  overflow: hidden;
+}
+
+.attendance-table th,
+.attendance-table td {
+  border: 1px solid rgba(15, 40, 55, 0.4);
+  text-align: center;
+  padding: 0.6rem;
+}
+
+.attendance-table thead th {
+  background: rgba(25, 84, 118, 0.9);
+  font-size: 1rem;
+}
+
+.attendance-table tbody th {
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.attendance-table input[type='checkbox'] {
+  width: 1.2rem;
+  height: 1.2rem;
+}
+
+.attendance-memo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.attendance-memo label {
+  font-weight: 600;
+}
+
+.attendance-memo textarea {
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  padding: 0.6rem;
+  background: #fff;
+  resize: vertical;
+}
+
+.attendance-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.attendance-status {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
 @media (max-width: 720px) {
   body {
     padding: 1.5rem 1rem;

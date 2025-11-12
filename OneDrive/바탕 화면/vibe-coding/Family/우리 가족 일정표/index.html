@@ -43,6 +43,42 @@
       <div class="modal-body">
         <div class="modal-date" id="modal-date-label"></div>
         <section class="event-list" id="event-list" aria-live="polite"></section>
+        <section class="attendance-card" id="attendance-card" hidden>
+          <header class="attendance-header">
+            <h4>등·하원 체크</h4>
+            <p class="attendance-subtitle">평일에만 기록할 수 있습니다.</p>
+          </header>
+          <table class="attendance-table" aria-label="등하원 체크표">
+            <thead>
+              <tr>
+                <th scope="col">이름</th>
+                <th scope="col">등원</th>
+                <th scope="col">하원</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">윤희</th>
+                <td><input id="attendance-yunhee-dropoff" type="checkbox" /></td>
+                <td><input id="attendance-yunhee-pickup" type="checkbox" /></td>
+              </tr>
+              <tr>
+                <th scope="row">태은</th>
+                <td><input id="attendance-taeeun-dropoff" type="checkbox" /></td>
+                <td><input id="attendance-taeeun-pickup" type="checkbox" /></td>
+              </tr>
+            </tbody>
+          </table>
+          <div class="attendance-memo">
+            <label for="attendance-notes">특이사항</label>
+            <textarea id="attendance-notes" rows="2" placeholder="간단한 메모를 남겨주세요"></textarea>
+          </div>
+          <div class="attendance-actions">
+            <button type="button" id="attendance-save" class="secondary">출석 저장</button>
+            <button type="button" id="attendance-clear" class="secondary">초기화</button>
+          </div>
+          <p class="attendance-status" id="attendance-status" role="status" aria-live="polite"></p>
+        </section>
         <form id="event-form">
           <label class="form-field">
             <span>구분</span>

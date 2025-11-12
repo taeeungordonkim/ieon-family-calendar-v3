@@ -1,9 +1,7 @@
 {
-  "builds": [
-    { "src": "package.json", "use": "@vercel/static-build" }
-  ],
   "scripts": {
-    "build": "npm run build"
-  },
-  "outputDirectory": "dist"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173"
+  }
 }

@@ -70,12 +70,23 @@ const eventImageRemove = document.getElementById('event-image-remove');
 const eventListEl = document.getElementById('event-list');
 const deleteAllBtn = document.getElementById('delete-all-btn');
 
+const attendanceCard = document.getElementById('attendance-card');
+const attendanceYunheeDropoff = document.getElementById('attendance-yunhee-dropoff');
+const attendanceYunheePickup = document.getElementById('attendance-yunhee-pickup');
+const attendanceTaeeunDropoff = document.getElementById('attendance-taeeun-dropoff');
+const attendanceTaeeunPickup = document.getElementById('attendance-taeeun-pickup');
+const attendanceNotes = document.getElementById('attendance-notes');
+const attendanceSaveBtn = document.getElementById('attendance-save');
+const attendanceClearBtn = document.getElementById('attendance-clear');
+const attendanceStatus = document.getElementById('attendance-status');
+
 const template = document.getElementById('event-item-template');
 const saveButton = eventForm.querySelector('.primary');
 
 const state = {
   currentDate: new Date(START_YEAR, START_MONTH, 1),
   events: {},
+  attendance: {},
   selectedDate: null,
   editingEventId: null
 };
@@ -123,29 +134,47 @@ function attachEventListeners() {
   deleteAllBtn.addEventListener('click', handleDeleteAll);
   eventImageInput.addEventListener('change', handleImageInputChange);
   eventImageRemove.addEventListener('change', handleImageRemoveChange);
+  attendanceSaveBtn.addEventListener('click', handleAttendanceSave);
+  attendanceClearBtn.addEventListener('click', handleAttendanceClear);
 }
 
 function loadEvents() {
-  const urlEvents = parseEventsFromUrl();
-  if (urlEvents) {
-    state.events = urlEvents;
-    persistEvents();
+  const sharedData = parseEventsFromUrl();
+  if (sharedData) {
+    applyLoadedData(sharedData);
+    persistData();
     return;
   }
 
   try {
     const stored = localStorage.getItem(STORAGE_KEY);
     if (stored) {
-      state.events = JSON.parse(stored);
+      const parsed = JSON.parse(stored);
+      applyLoadedData(parsed);
     }
   } catch (error) {
     console.warn('저장된 일정 데이터를 불러오지 못했습니다.', error);
   }
 }
 
-function persistEvents() {
+function applyLoadedData(data) {
+  if (!data || typeof data !== 'object') {
+    return;
+  }
+
+  if ('events' in data || 'attendance' in data) {
+    state.events = data.events && typeof data.events === 'object' ? data.events : {};
+    state.attendance = data.attendance && typeof data.attendance === 'object' ? data.attendance : {};
+  } else {
+    state.events = data;
+    state.attendance = {};
+  }
+}
+
+function persistData() {
   try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state.events));
+    const payload = getPersistableData();
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(payload));
   } catch (error) {
     console.warn('일정 데이터를 저장하지 못했습니다.', error);
   }
@@ -482,6 +511,7 @@ function openModal(isoDate) {
 
   prepareNewEventForm();
   renderEventList();
+  setupAttendanceSection(getSelectedDateContext());
   eventCategorySelect.focus();
 }
 
@@ -490,6 +520,7 @@ function closeModal() {
   document.body.style.overflow = '';
   state.selectedDate = null;
   prepareNewEventForm();
+  resetAttendanceUI();
 }
 
 function renderEventList() {
@@ -628,7 +659,7 @@ async function handleEventSubmit(event) {
   }
 
   state.events[isoDate] = events;
-  persistEvents();
+  persistData();
   renderCalendar();
   prepareNewEventForm();
   renderEventList();
@@ -655,7 +686,7 @@ function deleteEvent(eventId) {
     prepareNewEventForm();
   }
 
-  persistEvents();
+  persistData();
   renderCalendar();
   renderEventList();
 }
@@ -669,13 +700,13 @@ function handleDeleteAll() {
 
   delete state.events[state.selectedDate];
   prepareNewEventForm();
-  persistEvents();
+  persistData();
   renderCalendar();
   renderEventList();
 }
 
 function handleShareLink() {
-  const data = encodeShareData(state.events);
+  const data = encodeShareData(getPersistableData());
   const url = new URL(window.location.href);
   url.searchParams.set('data', data);
   const shareUrl = url.toString();
@@ -721,7 +752,7 @@ function fallbackCopy(text) {
 }
 
 function handleExport() {
-  const blob = new Blob([JSON.stringify(state.events, null, 2)], {
+  const blob = new Blob([JSON.stringify(getPersistableData(), null, 2)], {
     type: 'application/json'
   });
   const url = URL.createObjectURL(blob);
@@ -746,11 +777,12 @@ function handleImport(event) {
       if (!imported || typeof imported !== 'object') {
         throw new Error('데이터 형식이 올바르지 않습니다.');
       }
-      state.events = imported;
-      persistEvents();
+      applyLoadedData(imported);
+      persistData();
       renderCalendar();
       if (state.selectedDate) {
         renderEventList();
+        setupAttendanceSection(getSelectedDateContext());
       }
       alert('일정 데이터를 불러왔습니다.');
     } catch (error) {
@@ -794,4 +826,136 @@ function decodeShareString(base64) {
   const bytes = Uint8Array.from(binary, (char) => char.charCodeAt(0));
   const decoder = new TextDecoder();
   return decoder.decode(bytes);
+}
+
+function getPersistableData() {
+  return {
+    events: state.events,
+    attendance: state.attendance
+  };
+}
+
+function getSelectedDateContext() {
+  if (!state.selectedDate) {
+    return null;
+  }
+  const dateObj = parseISODate(state.selectedDate);
+  const lunarInfo = getLunarInfo(dateObj);
+  const holidays = getHolidays(dateObj, lunarInfo);
+  return {
+    isoDate: state.selectedDate,
+    dateObj,
+    lunarInfo,
+    holidays
+  };
+}
+
+function isAttendanceEligible(context) {
+  if (!context) return false;
+  const day = context.dateObj.getDay();
+  if (day === 0 || day === 6) return false;
+  return context.holidays.length === 0;
+}
+
+function setupAttendanceSection(context) {
+  if (!attendanceCard) return;
+  if (!context) {
+    resetAttendanceUI();
+    return;
+  }
+
+  if (!isAttendanceEligible(context)) {
+    resetAttendanceInputs();
+    attendanceCard.hidden = true;
+    setAttendanceStatus('');
+    return;
+  }
+
+  const record = state.attendance[context.isoDate] || {};
+  const yunhee = record.yunhee || {};
+  const taeeun = record.taeeun || {};
+
+  attendanceCard.hidden = false;
+  attendanceYunheeDropoff.checked = !!yunhee.dropoff;
+  attendanceYunheePickup.checked = !!yunhee.pickup;
+  attendanceTaeeunDropoff.checked = !!taeeun.dropoff;
+  attendanceTaeeunPickup.checked = !!taeeun.pickup;
+  attendanceNotes.value = record.notes || '';
+  setAttendanceStatus('');
+}
+
+function resetAttendanceInputs() {
+  attendanceYunheeDropoff.checked = false;
+  attendanceYunheePickup.checked = false;
+  attendanceTaeeunDropoff.checked = false;
+  attendanceTaeeunPickup.checked = false;
+  attendanceNotes.value = '';
+}
+
+function resetAttendanceUI() {
+  if (!attendanceCard) return;
+  resetAttendanceInputs();
+  attendanceCard.hidden = true;
+  setAttendanceStatus('');
+}
+
+function handleAttendanceSave() {
+  const context = getSelectedDateContext();
+  if (!context) return;
+  if (!isAttendanceEligible(context)) {
+    setAttendanceStatus('주말과 공휴일에는 출석을 기록하지 않습니다.');
+    return;
+  }
+
+  const notes = attendanceNotes.value.trim();
+  const record = {
+    yunhee: {
+      dropoff: attendanceYunheeDropoff.checked,
+      pickup: attendanceYunheePickup.checked
+    },
+    taeeun: {
+      dropoff: attendanceTaeeunDropoff.checked,
+      pickup: attendanceTaeeunPickup.checked
+    }
+  };
+
+  const hasData =
+    record.yunhee.dropoff ||
+    record.yunhee.pickup ||
+    record.taeeun.dropoff ||
+    record.taeeun.pickup ||
+    notes.length > 0;
+
+  if (hasData) {
+    if (notes) {
+      record.notes = notes;
+    }
+    state.attendance[context.isoDate] = record;
+    setAttendanceStatus('출석 정보를 저장했습니다.');
+  } else {
+    delete state.attendance[context.isoDate];
+    setAttendanceStatus('출석 기록을 삭제했습니다.');
+  }
+
+  persistData();
+  renderCalendar();
+  setupAttendanceSection(context);
+}
+
+function handleAttendanceClear() {
+  const context = getSelectedDateContext();
+  if (!context) return;
+
+  delete state.attendance[context.isoDate];
+  resetAttendanceInputs();
+  setAttendanceStatus('출석 기록을 초기화했습니다.');
+  persistData();
+  renderCalendar();
+  setupAttendanceSection(context);
+}
+
+function setAttendanceStatus(message) {
+  if (attendanceStatus) {
+    attendanceStatus.textContent = message;
+  }
 }
